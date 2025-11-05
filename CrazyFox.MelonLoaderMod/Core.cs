@@ -34,27 +34,35 @@ public class Core : MelonMod
     {
         var weapons = new List<WeaponData>();
         var passives = new List<PassiveData>();
-        foreach (var unlockable in DataManager.Instance.unsortedUnlockables)
-        {
-            LoggerInstance.Msg($"Found unlockable: {unlockable.name} ({unlockable.WasCollected})");
-        }
+
         foreach (var character in DataManager.Instance.unsortedCharacterData)
         {
-            weapons.Add(character.weapon);
             passives.Add(character.passive);
-            LoggerInstance.Msg($"Added {character.name} ({character.isEnabled})'s {character.weapon.name} ({character.weapon.isEnabled}) and {character.passive.name} ({character.passive}) ");
+
+            var weapon = character.weapon;
+            var requirementName = weapon.GetUnlockRequirement()?.name;
+            if (requirementName is null || string.IsNullOrEmpty(requirementName))
+            {
+                weapons.Add(character.weapon);
+                continue;
+            }
+            var hasAchivement = DataManager.Instance.achievementsData.TryGetValue(requirementName, out var achievement);
+            if (!hasAchivement)
+            {
+                weapons.Add(character.weapon);
+                continue;
+            }
+            var alreadyUnlock = achievement.IsUnlocked();
+            if (alreadyUnlock)
+            {
+                weapons.Add(character.weapon);
+                continue;
+            }
         }
         var fox = DataManager.Instance.characterData[ECharacter.Fox];
-        //var x = DataManager.Instance.characterData[ECharacter.Ninja];
 
-        //var baseWeapon = x.weapon;
-        //var basePassive = x.passive;
         fox.weapon = weapons[System.Random.Shared.Next(0, weapons.Count)];
         fox.passive = passives[System.Random.Shared.Next(0, passives.Count)];
-
-
-        //fox.weapon = baseWeapon;
-        //fox.passive = basePassive;
     }
 
 }
